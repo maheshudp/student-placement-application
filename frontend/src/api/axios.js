@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://127.0.0.1:8002', // Changed to avoid port 8000/8001 zombie conflict
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8002', // Changed to avoid port 8000/8001 zombie conflict
 });
 
 export const getStudents = () => api.get('/students/');

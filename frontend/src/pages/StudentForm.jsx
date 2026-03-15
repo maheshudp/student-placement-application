@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { createStudent, getOwnStudentProfile, updateStudent, uploadOfferLetter } from '../api/axios';
+import { createStudent, getOwnStudentProfile, updateStudent } from '../api/axios';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, Plus, Trash2 } from 'lucide-react';
@@ -131,18 +131,26 @@ export default function StudentForm({ isProfile = false }) {
     setFormData({ ...formData, placements: newPlacements });
   };
 
-  const handleFileUpload = async (index, file) => {
+  const handleFileUpload = (index, file) => {
     if (!file) return;
-    const formUpload = new FormData();
-    formUpload.append('file', file);
-    try {
-      const res = await uploadOfferLetter(formUpload);
-      handlePlacementChange(index, 'offer_letter_url', res.data.url);
-      alert('Offer letter uploaded successfully!');
-    } catch (err) {
-      console.error(err);
-      alert('Failed to upload file');
+    
+    // Check file size (limit to ~2MB for Base64 database storage)
+    if (file.size > 2 * 1024 * 1024) {
+      alert('File is too large. Please upload an offer letter smaller than 2MB.');
+      return;
     }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result;
+      handlePlacementChange(index, 'offer_letter_url', base64String);
+      alert('Offer letter attached successfully! Will save to database on submission.');
+    };
+    reader.onerror = () => {
+      alert('Failed to read file');
+    };
+    
+    reader.readAsDataURL(file);
   };
 
   const handleAlumniChange = (field, value) => {

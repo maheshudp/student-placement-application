@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Date, ForeignKey, Float, Enum, Boolean
+from sqlalchemy import Column, Integer, String, Date, ForeignKey, Float, Enum, Boolean, Text
 from sqlalchemy.orm import relationship
 from database import Base
 import enum
@@ -70,7 +70,7 @@ class Placement(Base):
     job_role = Column(String)
     package = Column(Float) # LPA
     placement_date = Column(Date)
-    offer_letter_url = Column(String, nullable=True) # Will point to local file path
+    offer_letter_url = Column(Text, nullable=True) # Now stores Base64 string directly
 
     student = relationship("Student", back_populates="placements")
 

@@ -1,12 +1,14 @@
-from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File
-from fastapi.responses import StreamingResponse
+from fastapi import FastAPI, Depends, HTTPException, status, File, UploadFile
+from fastapi.responses import JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
+from datetime import datetime, timedelta
 from typing import List
 from jose import JWTError, jwt
-from jose import JWTError, jwt
+import auth, crud, models, schemas
+from database import engine, get_db
 import os
 import shutil
 import io
@@ -134,15 +136,6 @@ def delete_student(student_id: int, db: Session = Depends(get_db), current_user:
     if not success:
         raise HTTPException(status_code=404, detail="Student not found")
     return {"message": "Student deleted successfully"}
-
-# --- Uploads endpoint ---
-@app.post("/upload/")
-async def upload_file(file: UploadFile = File(...), current_user: models.User = Depends(get_current_user)):
-    file_path = os.path.join(UPLOAD_DIR, file.filename)
-    # Ensure filename uniqueness in a real app, here we just save it directly
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
-    return {"filename": file.filename, "url": f"/uploads/{file.filename}"}
 
 # --- Reports endpoint ---
 @app.get("/reports/")
