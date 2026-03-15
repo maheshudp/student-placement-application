@@ -2,6 +2,9 @@ import axios from 'axios';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8002', // Changed to avoid port 8000/8001 zombie conflict
+  headers: {
+    'Bypass-Tunnel-Reminder': 'true' // Bypasses the localtunnel warning screen for API calls
+  }
 });
 
 export const getStudents = () => api.get('/students/');
