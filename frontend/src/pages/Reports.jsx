@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { getReports } from '../api/axios';
-import { BarChart3, Users, Briefcase, IndianRupee, GraduationCap } from 'lucide-react';
+import { getReports, downloadReportCSV, downloadReportPDF } from '../api/axios';
+import { BarChart3, Users, Briefcase, IndianRupee, GraduationCap, Download } from 'lucide-react';
 
 const StatCard = ({ title, value, icon: Icon, color }) => (
   <div className="bg-white overflow-hidden shadow rounded-lg">
@@ -42,19 +42,55 @@ const Reports = () => {
     fetchReports();
   }, []);
 
+  const handleDownload = async (type) => {
+    try {
+      const response = type === 'csv' ? await downloadReportCSV() : await downloadReportPDF();
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `students_report.${type}`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert(`Failed to download ${type.toUpperCase()} report.`);
+    }
+  };
+
   if (loading) return <div className="p-8 text-center text-gray-500">Loading Analytics...</div>;
   if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
 
   return (
     <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 animate-fade-in-up">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-          <BarChart3 className="mr-3 text-indigo-600 h-8 w-8" />
-          University Analytics Dashboard
-        </h1>
-        <p className="mt-2 text-sm text-gray-600">
-          A broad overview of student population logic, placements, and alumni networking metrics.
-        </p>
+      <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+            <BarChart3 className="mr-3 text-indigo-600 h-8 w-8" />
+            University Analytics Dashboard
+          </h1>
+          <p className="mt-2 text-sm text-gray-600">
+            A broad overview of student population logic, placements, and alumni networking metrics.
+          </p>
+        </div>
+        <div className="mt-4 sm:mt-0 flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={() => handleDownload('csv')}
+            className="inline-flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Download CSV
+          </button>
+          <button
+            onClick={() => handleDownload('pdf')}
+            className="inline-flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none"
+          >
+            <Download className="mr-2 h-4 w-4" />
+            Download PDF
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">

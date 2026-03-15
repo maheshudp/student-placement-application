@@ -1,12 +1,17 @@
 from fastapi import FastAPI, Depends, HTTPException, status, UploadFile, File
+from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
 from jose import JWTError, jwt
+from jose import JWTError, jwt
 import os
 import shutil
+import io
+import csv
+from fpdf import FPDF
 
 import models, schemas, crud, auth
 from database import SessionLocal, engine, get_db
@@ -159,3 +164,82 @@ def get_reports(db: Session = Depends(get_db), current_user: models.User = Depen
         "average_package_lpa": round(avg_package, 2),
         "total_alumni": total_alumni
     }
+
+@app.get("/reports/download/csv")
+def download_reports_csv(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_active_admin)):
+    students = db.query(models.Student).all()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Name", "Phone", "DOB", "Is Alumni", "Total Placements", "Highest Package"])
+    
+    for s in students:
+        placements = db.query(models.Placement).filter(models.Placement.student_id == s.id).all()
+        highest_pkg = max([p.package or 0 for p in placements]) if placements else 0
+        
+        writer.writerow([
+            s.id,
+            f"{s.first_name} {s.last_name}",
+            s.phone_number,
+            s.date_of_birth,
+            "Yes" if s.is_alumni else "No",
+            len(placements),
+            f"{highest_pkg} LPA" if highest_pkg else "N/A"
+        ])
+    
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=students_report.csv"}
+    )
+
+@app.get("/reports/download/pdf")
+def download_reports_pdf(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_active_admin)):
+    students = db.query(models.Student).all()
+    
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("helvetica", "B", 16)
+    pdf.cell(0, 10, "Student Management - Master Report", align="C", new_x="LMARGIN", new_y="NEXT")
+    pdf.ln(10)
+    
+    pdf.set_font("helvetica", "B", 10)
+    col_widths = [10, 50, 35, 25, 20, 30, 20]
+    headers = ["ID", "Name", "Phone", "DOB", "Alumni", "Highest Pkg", "Count"]
+    
+    for i, header in enumerate(headers):
+        pdf.cell(col_widths[i], 10, header, border=1, align="C")
+    pdf.ln()
+    
+    pdf.set_font("helvetica", "", 9)
+    for s in students:
+        placements = db.query(models.Placement).filter(models.Placement.student_id == s.id).all()
+        highest_pkg = max([p.package or 0 for p in placements]) if placements else 0
+        name = f"{s.first_name} {s.last_name}"
+        if len(name) > 30:
+            name = name[:27] + "..."
+            
+        row_data = [
+            str(s.id),
+            name,
+            str(s.phone_number),
+            str(s.date_of_birth),
+            "Yes" if s.is_alumni else "No",
+            f"{highest_pkg} LPA" if highest_pkg else "N/A",
+            str(len(placements))
+        ]
+        
+        for i, val in enumerate(row_data):
+            # Explicit string conversion just in case to comply with cell()
+            pdf.cell(col_widths[i], 10, txt=str(val), border=1, align="C")
+        pdf.ln()
+
+    # Generate PDF in memory
+    pdf_bytes = pdf.output()
+    
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes), 
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=students_report.pdf"}
+    )

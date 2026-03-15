@@ -19,4 +19,8 @@ export const uploadOfferLetter = (formData) => api.post('/upload/', formData, {
 });
 
 export const getReports = () => api.get('/reports/');
+
+export const downloadReportCSV = () => api.get('/reports/download/csv', { responseType: 'blob' });
+export const downloadReportPDF = () => api.get('/reports/download/pdf', { responseType: 'blob' });
+
 export default api;

@@ -1,0 +1,6 @@
+INFO:     127.0.0.1:51743 - "POST /register HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:51744 - "POST /auth/login HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:51745 - "POST /register HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:51765 - "POST /register HTTP/1.1" 500 Internal Server Error
+INFO:     127.0.0.1:51766 - "POST /auth/login HTTP/1.1" 401 Unauthorized
+INFO:     127.0.0.1:51767 - "POST /register HTTP/1.1" 500 Internal Server Error
